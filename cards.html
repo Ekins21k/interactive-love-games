@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>cards game</title>
+  <style>
+    body {
+      background: linear-gradient(135deg, #ff6b9b 0%, #a66bff 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+      text-align: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+    .hearts-container {
+      position: fixed;
+      inset: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .heart {
+      position: fixed;
+      color: white;
+      font-size: 20px;
+      animation: fall linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .heart-back { opacity: 0.3; }
+    .heart-front { opacity: 0.6; }
+    @keyframes fall {
+      0%   { transform: translateY(-5vh) rotate(0deg); opacity: 0; }
+      10%  { opacity: inherit; }
+      100% { transform: translateY(105vh) rotate(360deg); opacity: 0; }
+    }
+    
+    #backMain {
+      transform: scale(1.05);
+      position: fixed; top: 12px; left: 10px;
+      z-index: 2;
+
+    }
+    h1, .file-select, #chooseBox, .counter, .progress, .card-container, #resetBtn {
+      position: relative;
+      z-index: 2;
+    }
+    .file-select {
+      margin: 30px 0 10px 0;
+    }
+    .file-select label {
+      font-size: 1.1rem; margin-right: 10px;
+    }
+    #chooseBox { margin: 10px 0 20px 0; }
+    button { 
+      padding: 10px 20px; border-radius: 10px; border: none; background: rgba(255,255,255,0.3); color: white; cursor: pointer; font-size: 1.1rem; margin: 0 5px;
+      position: relative; z-index: 2;
+    }
+    button:hover { background: rgba(255,255,255,0.6); }
+    .counter { margin: 12px 0; font-size: 1.1rem; }
+    .progress { height: 6px; width: min(90%, 400px); margin: 0 auto; background: rgba(255,255,255,0.2); border-radius: 3px; overflow: hidden; position: relative; z-index: 2;}
+    .progress-inner { height: 100%; background: white; width: 0; transition: width 0.4s; }
+
+    .card-container {
+      display: flex; justify-content: center; align-items: center; min-height: 280px;
+      position: relative;
+      z-index: 2;
+    }
+    .card {
+      width: 340px; max-width: 95vw; height: 220px; background: rgba(255,255,255,0.17);
+      border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+      margin: 30px auto; font-size: 1.35rem; display: flex; align-items: center; justify-content: center;
+      perspective: 1200px; cursor: pointer; transition: box-shadow 0.2s;
+      position: relative;
+      user-select: none;
+      will-change: transform, opacity;
+      z-index: 3;
+    }
+    .card-flip {
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+      position: relative;
+      width: 100%; height: 100%;
+    }
+    .card.flipped .card-flip {
+      transform: rotateY(180deg);
+    }
+    .card-face {
+      position: absolute; width: 100%; height: 100%; left: 0; top: 0;
+      backface-visibility: hidden; display: flex; align-items: center; justify-content: center;
+      padding: 20px; box-sizing: border-box;
+    }
+    .card-face.back {
+      transform: rotateY(180deg);
+      color: #ffd6e6;
+      font-size: 1.11rem;
+      opacity: 0.85;
+    }
+    .card.throw {
+      animation: throwCard 0.6s forwards;
+    }
+    @keyframes throwCard {
+      0%   { opacity: 1; filter: blur(0px); }
+      80%  { opacity: 0.4; transform: translateX(80vw) rotateZ(12deg) scale(0.95); filter: blur(1px);}
+      100% { opacity: 0; transform: translateX(100vw) rotateZ(24deg) scale(0.7); filter: blur(4px);}
+    }
+    #resetBtn { display:none; margin-top:20px; z-index:2;}
+    @media(max-width:480px){
+      .card {font-size:1rem;height:170px;}
+      .card-face{padding:10px;}
+      .card-container{min-height:170px;}
+      #backMain { position: static; margin-bottom: 15px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="hearts-container" id="back-hearts"></div>
+  <div class="hearts-container" id="front-hearts"></div>
+  <button id="backMain" onclick="window.location.href='index.html'">⟵ Главная</button>
+  <h1>Карточки для двоих</h1>
+  <div class="file-select">
+    <label>Для тебя: <input type="file" id="fileMe" accept=".txt"></label>
+    <label>Для неё: <input type="file" id="fileHer" accept=".txt"></label>
+  </div>
+  <div id="chooseBox">
+    <button onclick="chooseSet('me')" id="btnMe" disabled>Мои вопросы</button>
+    <button onclick="chooseSet('her')" id="btnHer" disabled>Её вопросы</button>
+  </div>
+  <div class="counter" id="counter"></div>
+  <div class="progress"><div class="progress-inner" id="progress"></div></div>
+  <div class="card-container">
+    <div class="card" id="card" style="display:none;">
+      <div class="card-flip">
+        <div class="card-face front" id="cardFront"></div>
+        <div class="card-face back" id="cardBack">Нажми ещё раз, чтобы выкинуть карточку</div>
+      </div>
+    </div>
+  </div>
+  <button id="resetBtn" onclick="resetSession()">Сбросить и начать заново</button>
+  <footer>
+    &copy; 2025
+  </footer>
+  <script>
+    // Сердечки
+    function createHeart(isBack = false) {
+      const heart = document.createElement("div");
+      heart.className = `heart ${isBack ? 'heart-back' : 'heart-front'}`;
+      heart.textContent = "❤";
+      heart.style.left = Math.random() * 100 + "%";
+      heart.style.fontSize = (Math.random() * 20 + 10) + "px";
+      const duration = 5 + Math.random() * 5;
+      heart.style.animationDuration = duration + "s";
+      const container = isBack ? document.getElementById('back-hearts') : document.getElementById('front-hearts');
+      container.appendChild(heart);
+      setTimeout(() => heart.remove(), duration * 1000);
+    }
+    setInterval(() => createHeart(true), 500);
+    setInterval(() => createHeart(false), 800);
+    for(let i = 0; i < 15; i++) {
+      setTimeout(() => createHeart(true), i * 200);
+      setTimeout(() => createHeart(false), i * 300);
+    }
+
+    // Карточки
+    let reasonsMe = [], reasonsHer = [];
+    let reasons = [], unusedIndexes = [];
+    let currentIndex = null, activeSet = null;
+    let cardStage = 0;
+    let cardThrowing = false;
+    let questionsSeen = 0;
+
+    document.getElementById('fileMe').addEventListener('change', function(e) {
+      readFile(e.target.files[0], (lines) => {
+        reasonsMe = lines;
+        document.getElementById('btnMe').disabled = false;
+        if (reasonsHer.length) document.getElementById('btnHer').disabled = false;
+      });
+    });
+    document.getElementById('fileHer').addEventListener('change', function(e) {
+      readFile(e.target.files[0], (lines) => {
+        reasonsHer = lines;
+        document.getElementById('btnHer').disabled = false;
+        if (reasonsMe.length) document.getElementById('btnMe').disabled = false;
+      });
+    });
+
+    function readFile(file, callback) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+        callback(lines.length ? lines : ["Файл пуст :("]);
+      }
+      reader.readAsText(file, 'utf-8');
+    }
+
+    function chooseSet(set) {
+      activeSet = set;
+      reasons = set === 'me' ? reasonsMe : reasonsHer;
+      startSession();
+      document.getElementById('chooseBox').style.display = 'none';
+      document.getElementById('resetBtn').style.display = 'none';
+    }
+
+    function startSession() {
+      unusedIndexes = Array.from(reasons.keys());
+      shuffleArray(unusedIndexes);
+      questionsSeen = 0;
+      showFirstCard();
+    }
+
+    function renderCard(showQuestion) {
+      cardStage = showQuestion ? 1 : 0;
+      cardThrowing = false;
+      const card = document.getElementById('card');
+      card.classList.remove('flipped','throw');
+      card.style.display = '';
+      document.getElementById('cardFront').textContent = 
+        unusedIndexes.length > 0
+          ? (showQuestion ? reasons[currentIndex] : "Нажми, чтобы открыть вопрос")
+          : "Вопросы закончились!";
+      document.getElementById('counter').textContent = 
+        unusedIndexes.length > 0
+          ? `${questionsSeen+1} / ${reasons.length}`
+          : `${reasons.length} / ${reasons.length}`;
+      document.getElementById('progress').style.width = 
+        ((questionsSeen+1)/reasons.length*100)+'%';
+    }
+
+    function showFirstCard() {
+      if (unusedIndexes.length === 0) {
+        renderCard(false);
+        document.getElementById('resetBtn').style.display = '';
+        return;
+      }
+      currentIndex = unusedIndexes[0];
+      renderCard(false);
+      document.getElementById('resetBtn').style.display = 'none';
+    }
+
+    document.getElementById('card').addEventListener('click', function(){
+      if(cardThrowing) return;
+      const card = document.getElementById('card');
+      if(unusedIndexes.length === 0){
+        document.getElementById('resetBtn').style.display = '';
+        return;
+      }
+      if(cardStage === 0){
+        renderCard(true);
+      }else if(cardStage === 1){
+        cardThrowing = true;
+        card.classList.add('throw');
+        setTimeout(()=>{
+          showNextCard();
+        },550);
+      }
+    });
+
+    function showNextCard(){
+      if (unusedIndexes.length === 0) {
+        renderCard(false);
+        document.getElementById('resetBtn').style.display = '';
+        return;
+      }
+      let idx = unusedIndexes.indexOf(currentIndex);
+      if (idx !== -1) {
+        unusedIndexes.splice(idx,1);
+        questionsSeen++;
+      }
+      if (unusedIndexes.length === 0) {
+        renderCard(false);
+        document.getElementById('resetBtn').style.display = '';
+        return;
+      }
+      const r = Math.floor(Math.random() * unusedIndexes.length);
+      currentIndex = unusedIndexes[r];
+      renderCard(false);
+    }
+
+    function resetSession(){
+      startSession();
+      document.getElementById('resetBtn').style.display = 'none';
+    }
+
+    function shuffleArray(a) {
+      for(let i=a.length-1; i>0; i--){
+        let j = Math.floor(Math.random()*(i+1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
+  </script>
+</body>
+</html>
